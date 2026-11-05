@@ -1,0 +1,26 @@
+# Sachin Industries
+
+> Sheet metal laser cutting, bending and shearing in Bhosari, Pune, Maharashtra, India.
+
+## Business facts
+- Over 30 years of experience.
+- Fiber laser: 12 kW, 8,000 × 2,500 mm working bed, up to 40 mm cutting thickness.
+- Bending: up to 25 mm thickness and 8 metres length.
+- Shearing: up to 25 mm thickness and 8 metres length.
+- All maximums depend on material and part geometry. Maximum length and thickness must not be assumed achievable together. Contact the team for job-specific confirmation.
+- Address: S-68, MIDC, Bhosari, Pimpri-Chinchwad, Pune 411026, Maharashtra, India.
+- Email: sachinindustries1660@gmail.com
+- Sachin Agarwal: +91 94220 27396. Sumeet Agarwal: +91 98813 33501.
+
+## Service pages
+- [Fiber laser cutting](/laser-cutting-pune.html)
+- [Sheet metal bending](/sheet-metal-bending-pune.html)
+- [Sheet metal shearing](/sheet-metal-shearing-pune.html)
+
+Buyer guide: /sheet-metal-guide.html
+
+Process film: /process-film.html
+Free 2D CAD: /cad.html
+CAD commands, file formats and limits: /cad-guide.html
+Sachin CAD is an independent browser drafting tool: DXF import/export, precise coordinates, layers, dimensions and sheet-metal helpers. No account required; drawings remain on the visitor device. It is not AutoCAD and does not support DWG or CAM.
+3D illustrations are stylised process studies, not dimensionally exact digital twins.

@@ -1,0 +1,26 @@
+{
+  "name": "Cut. Bend. Shear. \u2014 Sachin Industries",
+  "duration": 24,
+  "width": 1280,
+  "height": 720,
+  "uploadDate": "2026-11-05T16:11:15+00:00",
+  "filename": "sachin-process-film.mp4",
+  "chapters": [
+    {
+      "name": "Laser cutting",
+      "start": 0,
+      "end": 8
+    },
+    {
+      "name": "Bending",
+      "start": 8,
+      "end": 16
+    },
+    {
+      "name": "Shearing",
+      "start": 16,
+      "end": 24
+    }
+  ],
+  "production": "Original 3D animation authored and rendered for Sachin Industries. No live factory footage."
+}

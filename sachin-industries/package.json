@@ -1,0 +1,25 @@
+{
+  "name": "sachin-industries",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/generate.mjs && vite --host 127.0.0.1",
+    "build": "node scripts/generate.mjs && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "check": "node scripts/check.mjs && node scripts/analytics-check.mjs && node scripts/cad-check.mjs",
+    "illustrations": "node scripts/illustrations.mjs",
+    "film:models": "node scripts/export-film-models.mjs"
+  },
+  "dependencies": {
+    "@tarikjabiri/dxf": "2.10.0",
+    "dxf-parser": "1.1.2",
+    "gsap": "3.15.1",
+    "paper": "0.17.0",
+    "three": "0.180.0",
+    "web-vitals": "6.2.3"
+  },
+  "devDependencies": {
+    "vite": "7.3.7"
+  }
+}
