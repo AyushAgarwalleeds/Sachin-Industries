@@ -1,6 +1,7 @@
 const t=(id,label,command,help,icon='line')=>({id,label,command,help,icon});
 export const TOOL_GROUPS={
  draw:[
+  t('insert','Insert block','INSERT · I','Place a copy of a saved block at an insertion point, scale and rotation.','copy'),
   t('line','Line','LINE · L','Pick successive points; Enter finishes separate line segments.','line'),
   t('polyline','Polyline','PLINE · PL','Pick vertices; Enter finishes, C closes the profile.','polyline'),
   t('rectangle','Rectangle','RECTANGLE · REC','Pick opposite corners or type a relative width,height.','rectangle'),
@@ -13,6 +14,8 @@ export const TOOL_GROUPS={
   t('point','Point','POINT · PO','Place construction points. Escape finishes.','point')
  ],
  modify:[
+  t('block','Define block','BLOCK · B','Save selected geometry with a name and base point in this project.','group'),
+  t('lengthen','Line length','LENGTHEN · LEN','Set a straight line to an exact length while holding one end fixed.','extend'),
   t('move','Move','MOVE · M','Select objects, then pick base and destination points.','move'),
   t('copy','Copy','COPY · CO','Select objects, then pick base and destination points.','copy'),
   t('rotate','Rotate','ROTATE · RO','Rotate selected objects about a precise centre.','rotate'),
@@ -50,6 +53,7 @@ export const TOOL_GROUPS={
   t('area','Area','AREA · AA','Report summed closed-loop area and selected path length.','area')
  ],
  fabricate:[
+  t('bolt','Bolt circle','BOLTCIRCLE · BCD','Lay out evenly spaced holes on a pitch circle using its diameter and starting angle.','polararray'),
   t('plate','Mounting plate','PLATE','Create a rounded plate, mounting holes and an optional slot.','plate'),
   t('bracket','Bend layout','BEND','Estimate one-bend flat length from outside legs and create cut/bend geometry.','bracket'),
   t('blank','Shear blank','BLANK','Create a precisely dimensioned rectangular cutting blank.','rectangle'),

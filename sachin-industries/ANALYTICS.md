@@ -1,6 +1,10 @@
 # Analytics and performance measurement
 
-The GA4 integration is implemented. No Measurement ID has been supplied, so the current build does not load Google Analytics or show a consent banner. No invented property ID is used. Adding a real ID and rebuilding activates the consent-controlled integration.
+On production Vercel deployments the consent banner works with first-party event counts. Open the project's **Logs**, select production, and search for `sachin_activity`. Each record is one accepted event with its page and optional contact channel. Use the Logs time filters to compare activity inside your plan's retention window. These are event counts, so they cannot identify unique visitors. A contact click or prepared enquiry records intent. A sale or delivered message requires separate confirmation.
+
+The first-party handler requires an explicit consent cookie and a same-origin request. It logs a fixed list of page and action categories. It does not ingest filenames, form content or URL parameters. Visitors can change their preference from the footer. The optional GA4 integration below adds longer-term reports, campaign attribution and Core Web Vitals.
+
+For totals by event, page and contact channel, export the corresponding Vercel runtime logs in newline-delimited JSON and run `npm run --silent report:activity -- activity.jsonl` in the project directory. The report prints CSV for a spreadsheet. Retention and the available logs determine the period it covers.
 
 ## Activate your own GA4 property
 

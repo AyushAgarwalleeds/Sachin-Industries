@@ -8,7 +8,7 @@ export const defaultLayers=()=>[
  {name:'ANNOTATION',color:'#c4cbc6',role:'annotation',visible:true,locked:false,dash:'solid'},
  {name:'CONSTRUCTION',color:'#c18af9',role:'construction',visible:true,locked:false,dash:'dotted'}
 ];
-export const newDocument=()=>({format:'sachin-cad',version:1,name:'Untitled drawing',units:'mm',currentLayer:'CUT',layers:defaultLayers(),entities:[],stock:{width:8000,height:2500,show:false}});
+export const newDocument=()=>({format:'sachin-cad',version:1,name:'Untitled drawing',units:'mm',currentLayer:'CUT',layers:defaultLayers(),entities:[],blocks:[],stock:{width:8000,height:2500,show:false}});
 export function validateDocument(value){
  if(!value||value.format!=='sachin-cad'||value.version!==1||!Array.isArray(value.entities)||!Array.isArray(value.layers))throw new Error('This is not a supported Sachin CAD project.');
  if(value.entities.length>MAX_ENTITIES||value.layers.length>100||!value.layers.length)throw new Error(`Projects support up to ${MAX_ENTITIES.toLocaleString()} entities and 100 layers.`);
@@ -25,6 +25,24 @@ export function validateDocument(value){
   return e;
  });
  doc.currentLayer=seen.has(value.currentLayer)?value.currentLayer:doc.layers[0].name;
+ const blocks = value.blocks ?? [];
+ if (!Array.isArray(blocks) || blocks.length > 100) throw new Error('A project supports up to 100 block definitions.');
+ const names = new Set();
+ let blockEntities = 0;
+ doc.blocks = blocks.map(block => {
+   if (typeof block?.name !== 'string' || !block.name.trim() || block.name.length > 60 || names.has(block.name.toLowerCase())) throw new Error('Invalid or duplicate block name.');
+   names.add(block.name.toLowerCase());
+   if (!Array.isArray(block.entities) || !block.entities.length) throw new Error('Block definitions need geometry.');
+   blockEntities += block.entities.length;
+   if (blockEntities > MAX_ENTITIES) throw new Error('Block definitions exceed the geometry limit.');
+   for (const object of block.entities) {
+     validateEntity(object);
+     if (!seen.has(object.layer)) throw new Error('A block refers to a missing layer.');
+     points += object.points?.length || object.segments?.length || 2;
+     if (points > 250000) throw new Error('Too many control points in project.');
+   }
+   return {name: block.name, entities: clone(block.entities)};
+ });
  if(value.stock&&Number.isFinite(value.stock.width)&&Number.isFinite(value.stock.height)&&value.stock.width>0&&value.stock.height>0&&Math.max(value.stock.width,value.stock.height)<1e7)doc.stock={width:value.stock.width,height:value.stock.height,show:!!value.stock.show};
  return doc;
 }

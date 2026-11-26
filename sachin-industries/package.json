@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "report:activity": "node scripts/activity-report.mjs",
     "dev": "node scripts/generate.mjs && vite --host 127.0.0.1",
     "build": "node scripts/generate.mjs && vite build",
     "preview": "vite preview --host 127.0.0.1",

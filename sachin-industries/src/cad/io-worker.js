@@ -1,2 +1,13 @@
 import {importDxf,exportDxf,validateDocument} from './io.js';
-self.onmessage=e=>{try{const {id,action,payload}=e.data;const value=action==='import'?importDxf(payload.text,payload.options):action==='export'?exportDxf(validateDocument(payload.doc),payload.options):null;self.postMessage({id,value});}catch(error){self.postMessage({id:e.data.id,error:error.message});}};
+import {dxfText} from './dxf-bytes.js';
+self.onmessage = ({data}) => {
+  try {
+    const {action, payload} = data;
+    const value = action === 'import'
+      ? importDxf(dxfText(payload.bytes), payload.options)
+      : exportDxf(validateDocument(payload.doc), payload.options);
+    self.postMessage({id:data.id, value});
+  } catch (error) {
+    self.postMessage({id:data.id, error:error.message});
+  }
+};

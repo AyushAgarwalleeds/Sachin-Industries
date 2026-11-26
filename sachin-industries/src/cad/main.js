@@ -2,6 +2,7 @@ import * as G from './geometry.js';
 import {newDocument,defaultLayers,validateDocument,MAX_ENTITIES,entitySvg,exportSvg} from './io.js';
 import {TOOL_GROUPS,TOOLS,ICONS} from './catalog.js';
 import './cad.css';
+import {defineBlock, insertBlock, resizeLine, boltCircle} from './parts.js';
 
 export function initCad(analytics={track(){}}){
 const app=document.querySelector('#cad-app');if(!app||app.dataset.ready)return;app.dataset.ready='true';
@@ -43,7 +44,7 @@ function setView(){
  for(const [id,size] of [['cad-grid-small',step],['cad-grid-major',step*5]]){const p=$('#'+id);p.setAttribute('width',size);p.setAttribute('height',size);p.setAttribute('patternTransform',`translate(${ox} ${oy})`);p.firstElementChild.setAttribute('d',`M${size} 0H0V${size}`);}
  $('#cad-grid').style.display=flags.grid?'':'none';$('#cad-zoom').textContent=`${view.zoom.toFixed(2)}×`;renderGrips();renderPreview();
 }
-function fit(){const list=visibleGeometry(),b=G.bounds(list);if(doc.stock.show){b.x=Math.min(b.x,0);b.y=Math.min(b.y,0);b.width=Math.max(b.x+b.width,doc.stock.width)-b.x;b.height=Math.max(b.y+b.height,doc.stock.height)-b.y;b.center=[b.x+b.width/2,b.y+b.height/2];}view.center=b.center;view.zoom=Math.max(.00001,Math.min(5000,Math.min((W-120)/Math.max(20,b.width),(H-125)/Math.max(20,b.height))));setView();}
+function fit(){const list=visibleGeometry(),b=G.bounds(list);if(doc.stock.show){const right=Math.max(b.x+b.width,doc.stock.width),top=Math.max(b.y+b.height,doc.stock.height);b.x=Math.min(b.x,0);b.y=Math.min(b.y,0);b.width=right-b.x;b.height=top-b.y;b.center=[b.x+b.width/2,b.y+b.height/2];}view.center=b.center;view.zoom=Math.max(.00001,Math.min(5000,Math.min((W-120)/Math.max(20,b.width),(H-125)/Math.max(20,b.height))));setView();}
 function zoomAt(screenPoint,amount){const before=fromScreen(screenPoint);view.zoom=Math.max(.00001,Math.min(5000,view.zoom*amount));const after=fromScreen(screenPoint);view.center=G.add(view.center,G.sub(before,after));setView();}
 function sceneMarkup(e){const l=layer(e),sel=selection.has(e.id),dash=l.dash==='dashed'?'stroke-dasharray="7 4"':l.dash==='dotted'?'stroke-dasharray="1 4"':'';return `<g class="cad-object${sel?' is-selected':''}${l.locked?' is-locked':''}" data-e="${G.esc(e.id)}" style="color:${l.color}" ${dash}><title>${G.esc(e.type)} on ${G.esc(e.layer)}</title>${entitySvg(e,factor())}</g>`;}
 function renderScene(){
@@ -222,13 +223,19 @@ function exportDialog(){showForm('Take your drawing.',[field('format','File form
  const sync=()=>{const project=formatField.value==='json';options.elements.units.disabled=formatField.value!=='dxf';for(const name of ['profiles','selection']){options.elements[name].disabled=project;if(project)options.elements[name].checked=false;}};
  formatField.addEventListener('change',sync);sync();
 }
-function openDialog(){showForm('Open a drawing.',[field('units','DXF import units','auto','select',{choices:[['auto','Use DXF header; missing units → mm'],['mm','Override: millimetres'],['in','Override: inches']]}),checkbox('Merge into the current drawing','merge',false)],v=>{settings.importOptions=v;$('#cad-file').value='';$('#cad-file').click();},{description:'ASCII DXF up to 20 MB or a Sachin CAD project. Native DWG and binary DXF are not supported. Your file is read on this device.',submit:'Choose file ↗'});}
+function openDialog(){showForm('Open a drawing.',[field('units','DXF import units','auto','select',{choices:[['auto','Use DXF header; missing units → mm'],['mm','Override: millimetres'],['in','Override: inches']]}),checkbox('Merge into the current drawing','merge',false)],v=>{settings.importOptions=v;$('#cad-file').value='';$('#cad-file').click();},{description:'Text or binary DXF up to 20 MB, or a saved Sachin CAD project. For DWG, choose DWG workspace above the editor. Your file is read on this device.',submit:'Choose file ↗'});}
 $('#cad-file').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;const opts=settings.importOptions||{units:'auto',merge:false};$('#cad-busy').hidden=false;
- try{if(file.size>20*1024*1024)throw new Error('Choose a file smaller than 20 MB.');const text=await file.text();let imported,warnings=[],skipped={};
-  if(/\.dxf$/i.test(file.name)){const result=await workerCall('import',{text,options:{units:opts.units}});imported=result.doc;warnings=result.warnings;skipped=result.skipped;}
-  else imported=validateDocument(JSON.parse(text));
+ try{if(file.size>20*1024*1024)throw new Error('Choose a file smaller than 20 MB.');let imported,warnings=[],skipped={};
+  if(/\.dxf$/i.test(file.name)){const result=await workerCall('import',{bytes:await file.arrayBuffer(),options:{units:opts.units}});imported=result.doc;warnings=result.warnings;skipped=result.skipped;}
+  else imported=validateDocument(JSON.parse(await file.text()));
   imported.name=file.name.replace(/\.(sachincad\.)?(json|dxf|sachincad)$/i,'').slice(0,100);
-  let ids=[];const importedOk=commit(`${imported.entities.length} entities ${opts.merge?'merged':'opened'}.`,next=>{if(opts.merge){for(const l of imported.layers)if(!next.layers.some(x=>x.name===l.name))next.layers.push(l);const list=imported.entities.map(e=>({...e,id:G.uid(),group:undefined}));ids=list.map(e=>e.id);next.entities.push(...list);}else{Object.assign(next,imported);ids=next.entities.map(e=>e.id);}});if(!importedOk)throw new Error('The file could not be added to this drawing; see the command log.');selection.clear();cancel(false);renderAll();fit();
+  let ids=[];const importedOk=commit(`${imported.entities.length} entities ${opts.merge?'merged':'opened'}.`,next=>{if(opts.merge){for(const l of imported.layers)if(!next.layers.some(x=>x.name===l.name))next.layers.push(l);for (const block of imported.blocks || []) {
+    let name = block.name;
+    let number = 2;
+    while (next.blocks.some(item => item.name.toLowerCase() === name.toLowerCase())) name = block.name.slice(0,52) + ' (' + number++ + ')';
+    next.blocks.push({...block,name});
+   }
+   const list=imported.entities.map(e=>({...e,id:G.uid(),group:undefined}));ids=list.map(e=>e.id);next.entities.push(...list);}else{Object.assign(next,imported);ids=next.entities.map(e=>e.id);}});if(!importedOk)throw new Error('The file could not be added to this drawing; see the command log.');selection.clear();cancel(false);renderAll();fit();
   analytics.track('cad_import',{file_type:/\.dxf$/i.test(file.name)?'dxf':'json'});
   const skippedText=Object.entries(skipped).map(([type,n])=>`${n} ${type}`).join(', ');
   if(warnings.length||skippedText)showForm('Import report.',[],()=>{},{description:`${imported.entities.length} entities read. ${warnings.join(' ')} ${skippedText?'Skipped: '+skippedText+'.':''} Review the geometry before exporting or manufacturing.`,submit:'Continue'});
@@ -238,6 +245,51 @@ function help(){options.innerHTML=`<h2>A command for your idea.</h2><p>Click a t
 function runAction(id,args=[]){
  try{
  const f=factor(),list=selected();
+ if (id === 'block') {
+   const objects = needSelection();
+   showForm('Define a reusable block', [
+     field('name', 'Block name', 'Mounting pattern', 'text', {wide:true}), ...centerFields()
+   ], values => {
+     const block = defineBlock(values.name, objects, [values.cx*f, values.cy*f]);
+     if (doc.blocks.some(item => item.name.toLowerCase() === block.name.toLowerCase())) throw new Error('Choose a different block name.');
+     if (!commit('Block saved. Use INSERT to place a copy.', next => next.blocks.push(block))) throw new Error('Block could not be saved. Check the command log.');
+   }, {description:'The centre coordinates set the insertion base. Save the project to keep this library.'});
+   return;
+ }
+ if (id === 'insert') {
+   if (!doc.blocks.length) throw new Error('Select objects and use BLOCK to save a pattern first.');
+   showForm('Insert a block', [
+     field('name', 'Saved block', doc.blocks[0].name, 'select', {choices:doc.blocks.map(b => b.name), wide:true}),
+     ...centerFields([0,0]), field('scale', 'Scale factor', 1), field('angle', 'Rotation in degrees', 0)
+   ], values => {
+     const block = doc.blocks.find(item => item.name === values.name);
+     const copies = insertBlock(block, [values.cx*f, values.cy*f], values.scale, values.angle);
+     if (!addEntities(copies, 'Block inserted as an editable group.')) throw new Error('Check layer visibility, locks and drawing limits.');
+     fit();
+   }, {description:'Place a grouped copy on its original layers. Ungroup it to edit individual objects.'});
+   return;
+ }
+ if (id === 'lengthen') {
+   if (list.length !== 1 || list[0].type !== 'line') throw new Error('Select one straight line first.');
+   const line = list[0];
+   showForm('Set line length', [
+     field('length', 'New length (' + unitLabel() + ')', G.clean(G.distance(line.a,line.b)/f)),
+     field('fixed','Fixed endpoint','start','select',{choices:['start','end']})
+   ], values => replaceEntities(list,[resizeLine(line,values.length*f,values.fixed)],'Line length updated.'));
+   return;
+ }
+ if (id === 'bolt') {
+   showForm('Bolt circle', [
+     ...centerFields([0,0]), field('pitch','Pitch circle diameter (' + unitLabel() + ')', 100/f),
+     field('diameter','Hole diameter (' + unitLabel() + ')', 8/f), field('count','Number of holes',6),
+     field('angle','First hole angle in degrees',0)
+   ], values => {
+     const holes = boltCircle([values.cx*f,values.cy*f],values.pitch*f,values.diameter*f,values.count,values.angle);
+     if (!addEntities(holes,'Bolt circle created on CUT.')) throw new Error('Check the CUT layer and drawing limits.');
+     fit();
+   }, {description:'Angle is counterclockwise from the positive X axis. Each hole exports as a DXF circle.'});
+   return;
+ }
  if(['select','pan','line','polyline','rectangle','circle','arc','ellipse','spline','point','dimension','dimh','dimv','radius','diameter','measure','trim','extend','break'].includes(id)){setTool(id);return;}
  if(id==='move'||id==='copy'){needSelection();setTool(id);return;}
  if(id==='polygon'){showForm('A profile with a point of view.',[field('sides','Number of sides',6,'number',{min:3,max:360}),field('mode','Radius convention','inscribed','select',{choices:[['inscribed','Vertices on the radius circle'],['circumscribed','Sides tangent to the radius circle']]})],v=>{if(!Number.isInteger(v.sides))throw new Error('Sides must be an integer.');setTool('polygon',{sides:v.sides,polygonMode:v.mode});},{submit:'Place polygon ↗'});return;}
@@ -291,7 +343,7 @@ function fabricationDialog(id){
 }
 function layerAction(id){
  if(id==='layer-add'){showForm('Give each line a purpose.',[field('name','Layer name','DETAIL','text',{wide:true}),field('role','Purpose','cut','select',{choices:['cut','bend','annotation','construction']})],v=>{const name=v.name.trim().slice(0,60);if(!name||doc.layers.some(l=>l.name===name))throw new Error('Choose a unique layer name.');commit(`Layer ${name} created.`,next=>{next.layers.push({name,color:'#dafa70',role:v.role,visible:true,locked:false,dash:'solid'});next.currentLayer=name;});});return;}
- if(id==='layer-purge'){commit('Empty custom layers removed.',next=>{const defaults=new Set(defaultLayers().map(l=>l.name)),used=new Set(next.entities.map(e=>e.layer));next.layers=next.layers.filter(l=>defaults.has(l.name)||used.has(l.name)||l.name===next.currentLayer);});return;}
+ if(id==='layer-purge'){commit('Empty custom layers removed.',next=>{const defaults=new Set(defaultLayers().map(l=>l.name)),used=new Set([...next.entities,...next.blocks.flatMap(b=>b.entities)].map(e=>e.layer));next.layers=next.layers.filter(l=>defaults.has(l.name)||used.has(l.name)||l.name===next.currentLayer);});return;}
  runAction(id);
 }
 app.addEventListener('click',e=>{
@@ -351,7 +403,7 @@ canvas.addEventListener('pointerup',e=>{
 canvas.addEventListener('pointercancel',()=>{interaction=null;touches.clear();pinch=null;objects.style.opacity='';grips.style.opacity='';stage.classList.remove('is-panning');renderPreview();});
 canvas.addEventListener('wheel',e=>{e.preventDefault();zoomAt(eventPoint(e),Math.exp(-Math.max(-150,Math.min(150,e.deltaY))*.0025));},{passive:false});
 canvas.addEventListener('contextmenu',e=>{e.preventDefault();if(['line','polyline','spline'].includes(tool)&&points.length>=2)finishDrawing(false);else cancel();});
-const aliases={l:'line',line:'line',pl:'polyline',pline:'polyline',polyline:'polyline',rec:'rectangle',rectangle:'rectangle',c:'circle',circle:'circle',a:'arc',arc:'arc',el:'ellipse',ellipse:'ellipse',pol:'polygon',polygon:'polygon',spl:'spline',spline:'spline',slot:'slot',po:'point',point:'point',m:'move',move:'move',co:'copy',copy:'copy',ro:'rotate',rotate:'rotate',sc:'scale',scale:'scale',mi:'mirror',mirror:'mirror',al:'align',align:'align',o:'offset',offset:'offset',tr:'trim',trim:'trim',ex:'extend',extend:'extend',f:'fillet',fillet:'fillet',cha:'chamfer',chamfer:'chamfer',ar:'array',array:'array',arraypolar:'polararray',j:'join',join:'join',x:'explode',explode:'explode',br:'break',break:'break',reverse:'reverse',g:'group',group:'group',ungroup:'ungroup',union:'union',subtract:'subtract',intersect:'intersect',e:'erase',erase:'erase',delete:'erase',t:'text',text:'text',mtext:'text',dim:'dimension',dimaligned:'dimension',dimh:'dimh',dimlinear:'dimh',dimv:'dimv',dimradius:'radius',dimdiameter:'diameter',mleader:'leader',h:'hatch',hatch:'hatch',di:'measure',dist:'measure',aa:'area',area:'area',plate:'plate',bend:'bracket',blank:'blank',stock:'stock',check:'review',example:'sample',new:'new',open:'open',save:'save',qsave:'save',export:'export',undo:'undo',u:'undo',redo:'redo',re:'redo',help:'help',selectall:'selectall',ze:'fit',print:'print',plot:'print',purge:'purge'};
+const aliases={block:'block',b:'block',insert:'insert',i:'insert',lengthen:'lengthen',len:'lengthen',bolt:'bolt',bcd:'bolt',boltcircle:'bolt',l:'line',line:'line',pl:'polyline',pline:'polyline',polyline:'polyline',rec:'rectangle',rectangle:'rectangle',c:'circle',circle:'circle',a:'arc',arc:'arc',el:'ellipse',ellipse:'ellipse',pol:'polygon',polygon:'polygon',spl:'spline',spline:'spline',slot:'slot',po:'point',point:'point',m:'move',move:'move',co:'copy',copy:'copy',ro:'rotate',rotate:'rotate',sc:'scale',scale:'scale',mi:'mirror',mirror:'mirror',al:'align',align:'align',o:'offset',offset:'offset',tr:'trim',trim:'trim',ex:'extend',extend:'extend',f:'fillet',fillet:'fillet',cha:'chamfer',chamfer:'chamfer',ar:'array',array:'array',arraypolar:'polararray',j:'join',join:'join',x:'explode',explode:'explode',br:'break',break:'break',reverse:'reverse',g:'group',group:'group',ungroup:'ungroup',union:'union',subtract:'subtract',intersect:'intersect',e:'erase',erase:'erase',delete:'erase',t:'text',text:'text',mtext:'text',dim:'dimension',dimaligned:'dimension',dimh:'dimh',dimlinear:'dimh',dimv:'dimv',dimradius:'radius',dimdiameter:'diameter',mleader:'leader',h:'hatch',hatch:'hatch',di:'measure',dist:'measure',aa:'area',area:'area',plate:'plate',bend:'bracket',blank:'blank',stock:'stock',check:'review',example:'sample',new:'new',open:'open',save:'save',qsave:'save',export:'export',undo:'undo',u:'undo',redo:'redo',re:'redo',help:'help',selectall:'selectall',ze:'fit',print:'print',plot:'print',purge:'purge'};
 function parseCoordinate(text){
  const str=text.trim(),number='[-+]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:e[-+]?\\d+)?',cart=new RegExp(`^(@?)(${number})\\s*,\\s*(${number})$`,'i'),polar=new RegExp(`^@(${number})<(${number})$`,'i'),f=factor();let m;
  if((m=str.match(cart))){const p=[Number(m[2])*f,Number(m[3])*f];return m[1]?G.add(points.at(-1)||[0,0],p):p;}
@@ -396,5 +448,12 @@ document.addEventListener('keyup',e=>{if(e.code==='Space')spacePan=false;});
 window.addEventListener('blur',()=>{spacePan=false;});
 const resize=new ResizeObserver(entries=>{const b=entries[0].contentRect;W=Math.max(1,b.width);H=Math.max(1,b.height);canvas.setAttribute('viewBox',`0 0 ${W} ${H}`);setView();});resize.observe(stage);
 renderRibbon();renderAll();requestAnimationFrame(()=>{const r=stage.getBoundingClientRect();W=r.width;H=r.height;fit();});
-$('#cad-save-status').textContent='Local recovery available';analytics.track('cad_start');log('All geometry stays on this device. Type HELP for commands; right-click SNAP to choose snap modes.');
+function countFirstUse() {
+  if (!analytics.track('cad_start')) return;
+  app.removeEventListener('pointerdown', countFirstUse);
+  app.removeEventListener('keydown', countFirstUse);
+}
+app.addEventListener('pointerdown', countFirstUse);
+app.addEventListener('keydown', countFirstUse);
+$('#cad-save-status').textContent='Local recovery available';log('All geometry stays on this device. Type HELP for commands; right-click SNAP to choose snap modes.');
 }

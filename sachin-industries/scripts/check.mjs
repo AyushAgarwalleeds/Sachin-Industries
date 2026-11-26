@@ -59,7 +59,7 @@ console.log('PASS: production canonical/social metadata, ten-page sitemap, visib
 console.log('PASS: encoded 24-second MP4, captions, watch page, VideoObject, three chapters and video sitemap metadata. Retired photographs are absent from all pages.');
 
 const fixtureCad=await readFile(resolve(fixture,'cad.html'),'utf8'),cadGraph=JSON.parse(fixtureCad.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1])['@graph'];
-const cad=cadGraph.find(x=>x['@type']==='WebApplication');assert.equal(cad.isAccessibleForFree,true);assert.equal(cad.offers.price,'0');assert.equal(cad.url,'https://sachin-seo-test.invalid/cad.html');assert.equal(cad.featureList.length,49);assert.ok(cadGraph.find(x=>x['@type']==='FAQPage').mainEntity.length===4);
+const cad=cadGraph.find(x=>x['@type']==='WebApplication');assert.equal(cad.isAccessibleForFree,true);assert.equal(cad.offers.price,'0');assert.equal(cad.url,'https://sachin-seo-test.invalid/cad.html');assert.equal(cad.featureList.length,53);assert.ok(cadGraph.find(x=>x['@type']==='FAQPage').mainEntity.length===4);
 assert.ok(fixtureMap.includes('/cad.html'));assert.ok(fixtureMap.includes('/cad-guide.html'));assert.ok(home.includes('data-load-map'));assert.ok(home.includes('Open Sachin CAD'));assert.ok(fixtureCad.includes('Your drawings stay on your device'));
 assert.ok(pages['cad-guide.html'].includes('PLINE 0,0 120,0'));assert.ok(!pages['cad-guide.html'].includes('<!-- CAD_COMMAND_TABLE -->'));
-console.log('PASS: 49-tool CAD application metadata, free access, four matching FAQs, command guide, CAD sitemap URLs, homepage discovery link and interactive-map loader.');
+console.log('PASS: 53-tool CAD application metadata, free access, four matching FAQs, command guide, CAD sitemap URLs, homepage discovery link and interactive-map loader.');

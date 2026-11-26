@@ -19,4 +19,33 @@ assert.ok(!JSON.stringify(calls).includes('private'));assert.ok(!JSON.stringify(
 const count=win.dataLayer.length;api.setConsent('denied');assert.equal(api.track('contact_click',{channel:'phone'}),false);assert.equal(win.dataLayer.length,count+1,'Only consent update occurs on withdrawal');api.setConsent('granted');assert.equal(scripts.length,1,'Re-consent does not inject duplicate tags');
 assert.equal(safePageLocation(win.location.href),'https://factory.test/laser-cutting-pune.html?utm_source=linkedin&utm_campaign=large_plate');
 const disabled=createAnalytics({id:'',win,doc});assert.equal(disabled.enabled,false);
+const posted = [];
+let preference = '';
+const firstPartyDoc = {get cookie() {return preference;}, set cookie(value) {preference = value.split(';')[0];}};
+const counts = createAnalytics({
+ id:'',firstParty:true,doc:firstPartyDoc,
+ win:{...win,fetch:async (url,options) => posted.push({url,...options})}
+});
+assert.equal(counts.track('page_view'),false);
+counts.setConsent('granted');
+counts.track('enquiry_prepared',{channel:'email',message:'private-project'});
+assert.deepEqual(posted.map(p=>JSON.parse(p.body)), [
+ {action:'page_view',page:'/laser-cutting-pune.html'},
+ {action:'enquiry_prepared',page:'/laser-cutting-pune.html',channel:'email'}
+]);
+assert.ok(posted.every(p=>p.url==='/api/activity' && p.referrerPolicy==='no-referrer'));
+counts.setConsent('denied');
+assert.equal(counts.track('page_view'),false);
+import activity from '../api/activity.js';
+const request = {method:'POST',headers:{host:'test.invalid',origin:'https://test.invalid',cookie:'si_analytics=denied','content-type':'application/json'},body:{action:'page_view',page:'/'}};
+const response = {setHeader(){},status(code){this.code=code;return this;},end(){}};
+activity(request,response);
+assert.equal(response.code,403);
+request.headers.cookie='si_analytics=granted';
+request.body.page='/private-name';
+activity(request,response);
+assert.equal(response.code,400);
+request.body.page='/cad.html';
+activity(request,response);
+assert.equal(response.code,204);
 console.log('PASS: analytics blocked before consent; accept, reject, withdrawal and re-consent; no duplicate tags; ad storage denied; enquiry PII excluded; safe URLs and campaign attribution. No external request was made.');

@@ -4,7 +4,7 @@ Sachin CAD is an original browser-based 2D editor integrated with the industrial
 
 ## Delivered workflow
 
-There are 49 ribbon tools across Draw, Modify, Annotate and Fabrication, plus file, view, layer, history and command controls. The published command guide is generated from the same tool catalogue as the interface.
+There are 53 ribbon tools across Draw, Modify, Annotate and Fabrication, plus file, view, layer, history and command controls. The published command guide is generated from the same tool catalogue as the interface.
 
 Drawing includes lines, polylines with arc bulges, rectangles, circles, three-point arcs, ellipses, regular polygons, slots, interpolation splines and points. Editing includes move/copy, rotate/scale/mirror, two-point alignment, offsets, trim/extend, line fillets/chamfers, rectangular/polar arrays, joining, exploding, breaking, reversing, grouping and closed-profile boolean operations.
 
@@ -16,9 +16,9 @@ Absolute, relative and polar coordinate entry, endpoint/midpoint/centre/quadrant
 
 - `src/cad/main.js`: interface, command dispatch, pointer/keyboard interactions, history, recovery and file-worker integration.
 - `src/cad/geometry.js`: geometry model, Paper.js operations, precise primitive measurements, transforms, drafting operations, dimensional graphics and bend formulas.
-- `src/cad/io.js`: validated project format, ASCII DXF import/export and SVG output.
+- `src/cad/io.js`: validated project format, text and binary DXF import, ASCII DXF export and SVG output.
 - `src/cad/io-worker.js`: file conversion in a browser worker.
-- `src/cad/catalog.js`: the shared 49-tool catalogue, command descriptions and original SVG icons.
+- `src/cad/catalog.js`: the shared 53-tool catalogue, command descriptions and original SVG icons.
 - `src/cad/cad.css`: responsive drawing interface.
 - `src/cad.html`, `src/cad-guide.html`, `src/cad-promo.html`: page, static guide and homepage feature.
 - `scripts/cad-check.mjs`: numerical geometry, interchange and validation tests.
@@ -31,7 +31,7 @@ Drawing, conversion and automatic recovery run on the visitor's device. No drawi
 
 DXF export preserves native lines, circles, arcs, polylines with bulges and full ellipses. Bezier geometry exports as cubic SPLINE segments. Layer colours and the editor's dashed/dotted styles are included. Project exports preserve the complete document; DXF/SVG can use visible geometry, selected geometry or the cut/bend profile scope.
 
-ASCII DXF import handles the documented 2D entities and expands supported INSERT blocks. General non-rational splines and partial ellipses may be sampled. Rational splines and unsupported entities are reported as skipped. This is not a lossless converter for arbitrary DXF files. DWG and binary DXF are not supported.
+DXF import handles the documented 2D entities and expands supported INSERT blocks. General non-rational splines and partial ellipses may be sampled. Rational splines and unsupported entities are reported as skipped. This is not a lossless converter for arbitrary DXF files. Binary DXF uses the same importer after group-code decoding. DWG files can be opened in the separate, on-demand MLightCAD workspace.
 
 Limits are 12,000 expanded entities, 100 layers, 250,000 control points and 20 MB source files. Block nesting and instance expansion are bounded. Numeric inputs are validated; rendered text and layer names are escaped. Undo is bounded to 80 states and approximately 32 MB. Performance depends on the visitor's device and drawing complexity.
 

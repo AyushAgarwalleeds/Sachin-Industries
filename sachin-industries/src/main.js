@@ -113,4 +113,23 @@ const startAt=Number(new URLSearchParams(location.search).get('t'));
 if(location.pathname.includes('process-film')&&Number.isFinite(startAt)&&startAt>0&&startAt<24)seekFilm(document.querySelector('#process-player'),startAt,false).catch(()=>{});
 
 if(document.querySelector('#cad-app'))import('./cad/main.js').then(m=>m.initCad(analytics)).catch(()=>{const status=document.querySelector('#cad-save-status');if(status)status.textContent='Editor could not load. Reload the page or read the CAD guide below.';});
+const workspaceButtons = document.querySelectorAll('[data-workspace]');
+for (const button of workspaceButtons) {
+  button.addEventListener('click', () => {
+    const useDwg = button.dataset.workspace === 'dwg';
+    document.getElementById('cad-app').hidden = useDwg;
+    document.getElementById('dwg-workspace').hidden = !useDwg;
+    for (const option of workspaceButtons) option.setAttribute('aria-pressed',String(option === button));
+    const slot = document.getElementById('dwg-frame-slot');
+    if (!useDwg || slot.firstElementChild) return;
+    const frame = document.createElement('iframe');
+    frame.title = 'MLightCAD drawing editor for DWG and DXF';
+    frame.referrerPolicy = 'no-referrer';
+    frame.allowFullscreen = true;
+    frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-downloads allow-modals allow-forms');
+    frame.src = 'https://mlightcad.github.io/cad-viewer-example/';
+    slot.append(frame);
+    analytics.track('dwg_workspace_open');
+  });
+}
 document.querySelector('[data-load-map]')?.addEventListener('click',()=>{const frame=document.createElement('iframe');frame.title='Interactive factory map for Sachin Industries, S-68 MIDC Bhosari, Pune';frame.src='https://maps.google.com/maps?q=Sachin%20Industries%20S-68%20MIDC%20Bhosari%20Pune%20411026&z=16&output=embed';frame.allowFullscreen=true;frame.referrerPolicy='strict-origin-when-cross-origin';frame.loading='lazy';document.querySelector('#factory-map-frame').replaceChildren(frame);analytics.track('map_open');});

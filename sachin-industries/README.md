@@ -58,13 +58,13 @@ Read `SEO-LAUNCH.md` for the remaining steps that need access to the business's 
 
 ## Analytics and discovery
 
-See `ANALYTICS.md` for GA4 activation, consent controls, event definitions, campaign tracking and performance reports. The real Measurement ID is still required; the unconfigured site sends no Analytics events. `GOOGLE_SITE_VERIFICATION` and `BING_SITE_VERIFICATION` enable search ownership verification tags. See `.env.example` for the supported public configuration.
+See `ANALYTICS.md` for GA4 activation, consent controls, event definitions, campaign tracking and performance reports. Vercel production builds include first-party event counts in project Logs after consent. GA4 reporting requires your Measurement ID. `GOOGLE_SITE_VERIFICATION` and `BING_SITE_VERIFICATION` enable search ownership verification tags. See `.env.example` for the supported public configuration.
 
 See `DESIGN-NOTES.md` for the design references and generated artwork provenance.
 
 ## Sachin CAD and the factory map
 
-`/cad.html` contains the browser-based 2D editor. `/cad-guide.html` documents its 49 tools, exact commands, supported file formats and limits. Drawings are processed on the visitor's device, with local recovery and downloadable DXF, SVG and project files. The editor supports precision coordinates, object snaps, layers, dimensions, transformations, profile operations, arrays and fabrication helpers.
+`/cad.html` contains the browser-based 2D editor. `/cad-guide.html` documents its 53 tools, exact commands, supported file formats and limits. Drawings are processed on the visitor's device, with local recovery and downloadable DXF, SVG and project files. The editor supports precision coordinates, object snaps, layers, dimensions, transformations, profile operations, arrays and fabrication helpers.
 
 The editor is an independent product with explicit support boundaries. Native DWG, 3D solids, parametric constraints, associative dimensions and CAM/machine control are outside its scope. Read `CAD-NOTES.md` for the architecture and verification evidence.
 
